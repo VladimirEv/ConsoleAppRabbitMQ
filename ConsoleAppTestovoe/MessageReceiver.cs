@@ -15,6 +15,7 @@ namespace ConsoleAppTestovoe
         private readonly IModel _channel;
         private readonly string _queueName;
        
+
         public MessageReceiver(string queueName)
         {
             _queueName = queueName;
@@ -41,6 +42,7 @@ namespace ConsoleAppTestovoe
             // Привязываем очередь к обмену с указанным ключом маршрутизации
             _channel.QueueBind(queueName, "messages_queue", routingKey);
         }
+
 
         // запускает получение сообщений из очереди
         public void StartReceiving()  
