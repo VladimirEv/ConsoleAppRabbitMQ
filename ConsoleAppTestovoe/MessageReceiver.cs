@@ -14,28 +14,7 @@ namespace ConsoleAppTestovoe
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly string _queueName;
-
-        //public MessageReceiver(string queueName)
-        //{
-        //    _queueName = queueName;
-
-        //    var factory = new ConnectionFactory()
-        //    {
-        //        HostName = "localhost", // Адрес сервера RabbitMQ
-        //        UserName = "guest",
-        //        Password = "guest",
-        //    };
-
-        //    _connection = factory.CreateConnection();
-        //    _channel = _connection.CreateModel();
-        //    _channel.QueueDeclare(queueName, durable: true, false, false, null);
-
-        //    // Определите, какие сообщения будет обрабатывать этот получатель
-        //    var routingKey = queueName == "ReceiverA" ? "A" : "B";
-
-        //    _channel.QueueBind(queueName, "messages_queue", routingKey);
-        //}
-
+       
         public MessageReceiver(string queueName)
         {
             _queueName = queueName;
