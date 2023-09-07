@@ -12,9 +12,13 @@ namespace ConsoleAppTestovoe
     public class MessageReceiver : IDisposable
     {
         private readonly IConnection _connection;
-        private readonly IModel _channel;
+        private readonly IModel _channel;         //объект типа IModel, который представляет канал связи с RabbitMQ.
         private readonly string _queueName;
-       
+        //используется для хранения и отслеживания обработанных сообщений
+        //HashSet<string> - это коллекция, предназначенная для хранения уникальных строковых значений
+        //используется для хранения идентификаторов (или других уникальных ключей) обработанных сообщений
+        private readonly HashSet<string> processedMessages = new HashSet<string>(); 
+
 
         public MessageReceiver(string queueName)
         {
@@ -22,7 +26,9 @@ namespace ConsoleAppTestovoe
 
             var factory = new ConnectionFactory()
             {
-                HostName = "localhost", // Адрес сервера RabbitMQ
+                // Адрес сервера RabbitMQ (подключил через Docker; создал образ и контейнер)
+                //строка подключения Docker: docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management
+                HostName = "localhost", 
                 UserName = "guest",
                 Password = "guest",
             };
@@ -51,20 +57,57 @@ namespace ConsoleAppTestovoe
             var consumer = new EventingBasicConsumer(_channel);
 
             //добавляется обработчик события Received, который вызывается, когда приходит
-            //новое сообщение в очередь. В этом обработчике извлекается тело сообщения,
-            //декодируется в строку и выводится в консоль
+            //новое сообщение в очередь. В этом обработчике извлекается тело сообщения
             consumer.Received += (model, ea) =>
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                Console.WriteLine($"Получено сообщение '{message}' для получателя '{_queueName}'");
 
+                //Проверим, было ли сообщение уже обработано
+                if (!IsMessageProcessed(message))
+                {
+                    Console.WriteLine($"Получено сообщение '{message}' для получателя '{_queueName}'");
 
+                    // Обрабатываем сообщение
+                    Console.WriteLine($"Обработка сообщения:'{message}'.");
+
+                    // Помечаем сообщение как обработанное
+                    MarkMessageAsProcessed(message);
+                }
+
+                //говорит RabbitMQ о том, что сообщение с указанным delivery tag было успешно обработано
+                //и может быть удалено из очереди;
+                //ea.DeliveryTag - это уникальный идентификатор доставки (delivery tag) для сообщения, которое было успешно обработано;
+                //ea здесь представляет объект BasicDeliverEventArgs, который содержит информацию о полученном сообщении, включая его delivery tag
                 _channel.BasicAck(ea.DeliveryTag, false);
             };
 
+            //Когда вызываем _channel.BasicConsume, потребитель начинает слушать очередь _queueName
+            //и ожидает получения новых сообщений;
+            //BasicConsume - это метод IModel, который инициирует потребление сообщений из очереди;
+            //consumer - это объект, который реализует интерфейс IBasicConsumer и представляет собой потребителя сообщений.
+            //Он содержит обработчики событий для обработки полученных сообщений, в данном случае,
+            //обработчик события Received для выполнения логики при получении нового сообщения.
             _channel.BasicConsume(_queueName, false, consumer);
         }
+
+
+        private bool IsMessageProcessed(string message)
+        {
+            lock (processedMessages)
+            {
+                return processedMessages.Contains(message);
+            }
+        }
+
+        private void MarkMessageAsProcessed(string message)
+        {
+            lock (processedMessages)
+            {
+                processedMessages.Add(message);
+            }
+        }
+
 
         public void Dispose()
         {

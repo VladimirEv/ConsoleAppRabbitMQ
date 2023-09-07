@@ -7,23 +7,32 @@ namespace ConsoleAppTestovoe
     //класс для отправителя сообщений
     public class MessageSender : IDisposable
     {
-        private readonly IConnection _connection;  //хранит соединение c RabbitMQ
-        private readonly IModel _channel;          //хранит канал для взаимодействия с брокером
+        //хранит соединение c RabbitMQ
+        private readonly IConnection _connection;
+
+        //хранит канал для взаимодействия с брокером
+        private readonly IModel _channel;          
 
         public MessageSender()
         {
             var factory = new ConnectionFactory()
             {
-                HostName = "localhost", // Адрес сервера RabbitMQ (подключились через Docker; создал образ и контейнер)
+                // Адрес сервера RabbitMQ (подключил через Docker; создал образ и контейнер)
+                //строка подключения Docker: docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.12-management
+                HostName = "localhost", 
                 UserName = "guest",
                 Password = "guest",
             };
 
-            _connection = factory.CreateConnection(); //создаём соединение для взаимодействия с RabbitMQ
-            _channel = _connection.CreateModel();     //создаём канал для взаимодействия с RabbitMQ (канал используется для отправки и получения сообщений)
+            //создаём соединение для взаимодействия с RabbitMQ
+            _connection = factory.CreateConnection();
+
+            //создаём канал для взаимодействия с RabbitMQ (канал используется для отправки и получения сообщений)
+            _channel = _connection.CreateModel();     
         }
 
-        public void SendMessage(string messageType, string message) //метод, который используется для отправки сообщений в очередь
+        //метод, который используется для отправки сообщений в очередь
+        public void SendMessage(string messageType, string message) 
         {
             //чтобы объявить очередь с именем "messages_queue".
             //Если очередь не существует, она будет создана.
